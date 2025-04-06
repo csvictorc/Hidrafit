@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "650437373998",
+    "project_id": "hydrafit-181ff",
+    "storage_bucket": "hydrafit-181ff.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:650437373998:android:4fbbc9432300317c7defbf",
+        "android_client_info": {
+          "package_name": "com.nhspsoftware.hydrafit"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAUT-eoPmKTGfWM2c2YU3eLCftE1O1wdVI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
