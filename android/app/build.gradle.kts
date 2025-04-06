@@ -1,21 +1,19 @@
 plugins {
     id("com.android.application")
-    // START: FlutterFire Configuration
     id("com.google.gms.google-services")
-    // END: FlutterFire Configuration
     id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
 
 android {
     namespace = "com.nhspsoftware.hydrafit"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = "29.0.13113456" // Defina a versão do NDK corretamente
+    ndkVersion = "29.0.13113456"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        isCoreLibraryDesugaringEnabled = true
     }
 
     kotlinOptions {
@@ -32,7 +30,7 @@ android {
 
     externalNativeBuild {
         cmake {
-            version = "3.31.6"  // Ajuste para a versão instalada
+            version = "3.31.6"
         }
     }
 
@@ -45,4 +43,13 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+
+
+    implementation("androidx.core:core-ktx:1.9.0")
+    implementation("androidx.appcompat:appcompat:1.6.1")
 }

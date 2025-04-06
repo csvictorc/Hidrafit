@@ -12,12 +12,15 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final TextEditingController _stepGoalController = TextEditingController();
+  final TextEditingController _hydrationIntervalController = TextEditingController();
+
   late SharedPreferences _prefs;
   double _stepGoalMeters = 5000;
+  int _hydrationInterval = 30;
+
   User? _user;
   bool _isLoading = true;
 
-  // Dados em cache
   String _cachedName = 'Usuário';
   String _cachedPhotoUrl = '';
   bool _usingCachedData = false;
@@ -33,17 +36,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       _prefs = await SharedPreferences.getInstance();
 
-      // Carrega dados em cache imediatamente
       _cachedName = _prefs.getString('name') ?? 'Usuário';
       _cachedPhotoUrl = _prefs.getString('photo_url') ?? '';
       _stepGoalMeters = _prefs.getDouble('step_goal_m') ?? 5000;
+      _hydrationInterval = _prefs.getInt('hydration_interval') ?? 30;
+
       _stepGoalController.text = (_stepGoalMeters / 1000).toStringAsFixed(1);
+      _hydrationIntervalController.text = _hydrationInterval.toString();
 
       setState(() {
         _isLoading = false;
       });
 
-      // Tenta atualizar os dados do Firebase em segundo plano
       await _updateProfileFromFirebase();
 
       setState(() {
@@ -61,10 +65,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _updateProfileFromFirebase() async {
     try {
-      // Verifica a conectividade
       var connectivityResult = await Connectivity().checkConnectivity();
       if (connectivityResult == ConnectivityResult.none) {
-        // Não há conexão
         setState(() {
           _usingCachedData = true;
           _connectionChecked = true;
@@ -72,13 +74,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return;
       }
 
-      _user = await FirebaseAuth.instance.currentUser;
+      _user = FirebaseAuth.instance.currentUser;
 
       if (_user != null) {
         final newName = _user!.displayName ?? 'Usuário';
         final newPhotoUrl = _user!.photoURL ?? '';
 
-        // Atualiza apenas se os dados forem diferentes
         if (newName != _cachedName || newPhotoUrl != _cachedPhotoUrl) {
           await _prefs.setString('name', newName);
           await _prefs.setString('photo_url', newPhotoUrl);
@@ -104,22 +105,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _saveStepGoal() async {
-    final parsed = double.tryParse(_stepGoalController.text.replaceAll(',', '.'));
-    if (parsed == null || parsed <= 0) {
+    final parsedStepGoal = double.tryParse(_stepGoalController.text.replaceAll(',', '.'));
+    final parsedHydrationInterval = int.tryParse(_hydrationIntervalController.text);
+
+    if (parsedStepGoal == null || parsedStepGoal <= 0) {
       _showToast('Digite uma meta válida em quilômetros.');
       return;
     }
 
+    if (parsedHydrationInterval == null || parsedHydrationInterval <= 0) {
+      _showToast('Digite um intervalo válido para hidratação (minutos).');
+      return;
+    }
+
     try {
-      await _prefs.setDouble('step_goal_m', parsed * 1000);
-      _showToast('Meta atualizada com sucesso.');
+      await _prefs.setDouble('step_goal_m', parsedStepGoal * 1000);
+      await _prefs.setInt('hydration_interval', parsedHydrationInterval);
+
+      _showToast('Preferências salvas com sucesso.');
 
       if (mounted) {
         Navigator.pushReplacementNamed(context, '/main');
       }
     } catch (e) {
-      _showToast('Erro ao salvar a meta. Tente novamente.');
-      debugPrint('Erro ao salvar meta: $e');
+      _showToast('Erro ao salvar preferências. Tente novamente.');
+      debugPrint('Erro ao salvar dados: $e');
     }
   }
 
@@ -161,47 +171,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
+          child: ListView(
             children: [
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  if (_cachedPhotoUrl.isNotEmpty)
-                    CircleAvatar(
-                      radius: 50,
-                      backgroundImage: NetworkImage(_cachedPhotoUrl),
-                    )
-                  else
-                    const CircleAvatar(
-                      radius: 50,
-                      child: Icon(Icons.person, size: 40),
-                    ),
-                  if (_usingCachedData && _connectionChecked)
-                    Positioned(
-                      right: 0,
-                      bottom: 0,
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: const BoxDecoration(
-                          color: Colors.orange,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.cloud_off,
-                          size: 20,
-                          color: Colors.white,
+              Center(
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    if (_cachedPhotoUrl.isNotEmpty)
+                      CircleAvatar(
+                        radius: 50,
+                        backgroundImage: NetworkImage(_cachedPhotoUrl),
+                      )
+                    else
+                      const CircleAvatar(
+                        radius: 50,
+                        child: Icon(Icons.person, size: 40),
+                      ),
+                    if (_usingCachedData && _connectionChecked)
+                      Positioned(
+                        right: 0,
+                        bottom: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: const BoxDecoration(
+                            color: Colors.orange,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.cloud_off,
+                            size: 20,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
               const SizedBox(height: 16),
-              Text(
-                _cachedName,
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+              Center(
+                child: Text(
+                  _cachedName,
+                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
               ),
               if (_usingCachedData && _connectionChecked)
@@ -209,10 +219,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   padding: EdgeInsets.only(top: 8),
                   child: Text(
                     'Modo offline - dados podem não estar atualizados',
-                    style: TextStyle(
-                      color: Colors.grey,
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: Colors.grey, fontSize: 12),
                   ),
                 ),
               const SizedBox(height: 32),
@@ -221,6 +228,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 decoration: const InputDecoration(
                   labelText: 'Meta diária (km)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _hydrationIntervalController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Intervalo entre copos de água (min)',
                   border: OutlineInputBorder(),
                 ),
               ),

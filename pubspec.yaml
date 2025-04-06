@@ -30,7 +30,7 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
-  sensors_plus: ^3.0.3
+  sensors_plus: ^6.1.1
   connectivity_plus: ^6.1.3
   firebase_core: ^2.30.0
   firebase_auth: ^4.19.0
@@ -39,6 +39,7 @@ dependencies:
   shared_preferences: ^2.2.2
   pedometer: ^4.0.1
   permission_handler: ^11.3.0
+  flutter_local_notifications: ^19.0.0
   flutter:
     sdk: flutter
 
