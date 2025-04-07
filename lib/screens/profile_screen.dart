@@ -241,12 +241,60 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _saveStepGoal,
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 50),
+
+              // Botão Salvar com estilo Neumórfico
+              GestureDetector(
+                onTap: _saveStepGoal,
+                child: Container(
+                  height: 50,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Colors.white,
+                        offset: Offset(-3, -3),
+                        blurRadius: 6,
+                        spreadRadius: 1,
+                      ),
+                      BoxShadow(
+                        color: Colors.black12,
+                        offset: Offset(1, 3),
+                        blurRadius: 1,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.save, color: Colors.black45),
+                      const SizedBox(width: 8),
+                      Stack(
+                        children: [
+                          Text(
+                            'Salvar',
+                            style: TextStyle(
+                              fontSize: 18,
+                              foreground: Paint()
+                                ..style = PaintingStyle.stroke
+                                ..strokeWidth = 1
+                                ..color = Colors.black45,
+                            ),
+                          ),
+                          const Text(
+                            'Salvar',
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: Colors.black45,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-                child: const Text('Salvar'),
               ),
             ],
           ),

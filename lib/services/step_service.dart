@@ -131,3 +131,63 @@ class StepCounterService {
     return result.isGranted;
   }
 }
+
+class StepService {
+  final SharedPreferences prefs;
+  StepCounterService? _stepCounterService;
+
+  double stepGoalMeters;
+  double currentDistance;
+  Function(double)? onDistanceUpdated;
+
+  StepService({
+    required this.prefs,
+    this.stepGoalMeters = 5000.0,
+    this.currentDistance = 0.0,
+    this.onDistanceUpdated,
+  });
+
+  Future<void> initialize() async {
+    stepGoalMeters = prefs.getDouble('step_goal_m') ?? 5000.0;
+    currentDistance = prefs.getDouble('total_distance_today') ?? 0.0;
+  }
+
+  void startStepCounter() {
+    _stepCounterService?.stop();
+
+    _stepCounterService = StepCounterService(
+      onDistanceUpdated: (distance) {
+        currentDistance = distance;
+        onDistanceUpdated?.call(distance);
+        _saveDistance(distance);
+      },
+    );
+
+    _stepCounterService?.start();
+  }
+
+  Future<void> _saveDistance(double distance) async {
+    await prefs.setDouble('total_distance_today', distance);
+  }
+
+  double calculateProgress() {
+    final progress = (currentDistance * 1000 / stepGoalMeters) * 100;
+    return progress.clamp(0, 100);
+  }
+
+  String formatDistance(double distanceKm) {
+    return distanceKm.toStringAsFixed(2);
+  }
+
+  Map<String, int> getActivityMetrics() {
+    return {
+      'steps': (currentDistance *1312.3359).toInt(),
+      'calories': (currentDistance * 60).toInt(),
+      'activeMinutes': (currentDistance * 12).toInt(),
+    };
+  }
+
+  void dispose() {
+    _stepCounterService?.stop();
+  }
+}

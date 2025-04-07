@@ -91,7 +91,7 @@ class _CircularProgressBarState extends State<CircularProgressBar>
   @override
   Widget build(BuildContext context) {
     final currentTime = Duration(milliseconds: DateTime.now().millisecondsSinceEpoch);
-    final wavePhase = (currentTime - _startTime).inMilliseconds / 1000.0; // contínuo
+    final wavePhase = (currentTime - _startTime).inMilliseconds / 1000.0;
 
     return CustomPaint(
       painter: _WaterPainter(
@@ -103,7 +103,7 @@ class _CircularProgressBarState extends State<CircularProgressBar>
         progressColor: widget.progressColor,
         backgroundColor: widget.backgroundColor,
       ),
-      child: const SizedBox(width: 200, height: 200),
+      child: const SizedBox(width: 320, height: 120),
     );
   }
 }
@@ -129,44 +129,49 @@ class _WaterPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final radius = min(size.width, size.height) / 2;
-    final center = Offset(size.width / 2, size.height / 2);
-    final circleRect = Rect.fromCircle(center: center, radius: radius);
+    final Path roundedRect = _createRoundedRectPath(size);
 
     canvas.save();
-    canvas.clipPath(Path()..addOval(circleRect));
+    canvas.clipPath(roundedRect);
 
     final Paint backgroundPaint = Paint()..color = backgroundColor;
-    canvas.drawCircle(center, radius, backgroundPaint);
+    canvas.drawPath(roundedRect, backgroundPaint);
 
     final Paint waterPaint = Paint()
       ..color = progressColor.withOpacity(0.65)
       ..style = PaintingStyle.fill;
 
-    final Path path = Path();
+    final Path wavePath = Path();
     final double baseHeight = size.height * (1 - progress);
     final double waveHeight = 8 * waveIntensity;
     final double waveLength = size.width * 1.2;
 
-    path.moveTo(0, baseHeight);
+    wavePath.moveTo(0, baseHeight);
 
-    for (double x = 0; x <= size.width; x += 1) {
+    for (double x = 0; x <= size.width; x++) {
       final y = baseHeight +
           sin((2 * pi / waveLength) * x + wavePhase) * waveHeight +
           sin((2 * pi / (waveLength / 2)) * x + wavePhase * 1.2) * (waveHeight / 2);
-      path.lineTo(x, y);
+      wavePath.lineTo(x, y);
     }
 
-    path.lineTo(size.width, size.height);
-    path.lineTo(0, size.height);
-    path.close();
+    wavePath.lineTo(size.width, size.height);
+    wavePath.lineTo(0, size.height);
+    wavePath.close();
 
-    canvas.drawPath(path, waterPaint);
+    canvas.drawPath(wavePath, waterPaint);
     canvas.restore();
   }
 
-  @override
-  bool shouldRepaint(covariant _WaterPainter oldDelegate) {
-    return true;
+  Path _createRoundedRectPath(Size size) {
+    final radius = 20.0;
+    return Path()
+      ..addRRect(RRect.fromRectAndRadius(
+        Rect.fromLTWH(0, 0, size.width, size.height),
+        Radius.circular(radius),
+      ));
   }
+
+  @override
+  bool shouldRepaint(covariant _WaterPainter oldDelegate) => true;
 }

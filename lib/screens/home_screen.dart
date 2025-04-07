@@ -2,10 +2,15 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import '../services/step_counter_service.dart';
+import 'package:permission_handler/permission_handler.dart';
+import '../helpers/ui_helpers.dart' as UiHelpers;
+import '../services/hydration_service.dart';
+import '../services/step_service.dart';
+import '../helpers/permission_helper.dart';
 import '../widgets/circular_progress_bar.dart';
+import '../main.dart';
+import '../widgets/pressable_button.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -15,239 +20,158 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late SharedPreferences _prefs;
-  StepCounterService? _stepCounterService;
-  double _stepGoalMeters = 5000.0;
-  double _currentDistance = 0.0;
+  late final HydrationService _hydrationService;
+  late final StepService _stepService;
+
   bool _needsPermission = false;
   bool _isInitialized = false;
   bool _isHydrationModalVisible = false;
+  bool _hasRedirectedToProfile = false;
+  String? userName;
+  double _dailyGoalKm = 5.0;
+  Timer? _uiUpdateTimer;
 
-  FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-  FlutterLocalNotificationsPlugin();
-
-  int hydrationIntervalMinutes = 30;
-  DateTime? lastDrinkTime;
-  Timer? _hydrationTimer;
+  bool _hasCongratulated = false;
 
   @override
   void initState() {
     super.initState();
-    _initNotifications();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _init();
+    _checkAndRequestNotificationPermission();
+    _initializeServices(notificationsPlugin: flutterLocalNotificationsPlugin);
+    _uiUpdateTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) {
+        setState(() {});
+        _checkGoalReached();
+      }
     });
   }
 
-  Future<void> _initNotifications() async {
-    const AndroidInitializationSettings initializationSettingsAndroid =
-    AndroidInitializationSettings('@mipmap/ic_launcher');
-    const InitializationSettings initializationSettings =
-    InitializationSettings(android: initializationSettingsAndroid);
-    await flutterLocalNotificationsPlugin.initialize(initializationSettings);
-  }
-
-  Future<void> _showWaterReminderNotification() async {
-    const AndroidNotificationDetails androidPlatformChannelSpecifics =
-    AndroidNotificationDetails(
-      'hydration_channel',
-      'Hidratação',
-      channelDescription: 'Lembretes para beber água',
-      importance: Importance.max,
-      priority: Priority.high,
-      showWhen: false,
-    );
-    const NotificationDetails platformChannelSpecifics =
-    NotificationDetails(android: androidPlatformChannelSpecifics);
-    await flutterLocalNotificationsPlugin.show(
-      0,
-      'Hora de se hidratar!',
-      'Beba um copo de água agora mesmo 💧',
-      platformChannelSpecifics,
-    );
-    _showHydrationModal();
-  }
-
-  Future<void> _init() async {
-    try {
-      _prefs = await SharedPreferences.getInstance();
-      _stepGoalMeters = _prefs.getDouble('step_goal_m') ?? 5000.0;
-      _currentDistance = _prefs.getDouble('total_distance_today') ?? 0.0;
-      hydrationIntervalMinutes = _prefs.getInt('hydration_interval') ?? 30;
-
-      String? lastDrinkStr = _prefs.getString('last_drink_time');
-      if (lastDrinkStr != null) {
-        lastDrinkTime = DateTime.tryParse(lastDrinkStr);
+  Future<void> _checkAndRequestNotificationPermission() async {
+    if (await Permission.notification.isDenied || await Permission.notification.isPermanentlyDenied) {
+      final status = await Permission.notification.request();
+      if (status.isGranted) {
+        debugPrint("✅ Permissão de notificação concedida");
       } else {
-        lastDrinkTime = DateTime.now();
-        await _prefs.setString('last_drink_time', lastDrinkTime!.toIso8601String());
+        debugPrint("❌ Permissão de notificação negada");
       }
-
-      _startHydrationTimer();
-
-      if (!_prefs.containsKey('name')) {
-        await _redirectToProfile();
-        return;
-      }
-
-      final permissionGranted = await Permission.activityRecognition.isGranted;
-
-      setState(() {
-        _needsPermission = !permissionGranted;
-        _isInitialized = true;
-      });
-
-      if (permissionGranted) {
-        _startStepCounter();
-      }
-    } catch (e) {
-      debugPrint("Erro na inicialização: $e");
     }
   }
 
-  void _startHydrationTimer() {
-    _hydrationTimer?.cancel();
-    _hydrationTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      final timeLeft = _timeUntilNextGlass();
-      if (timeLeft <= Duration.zero) {
-        _hydrationTimer?.cancel();
-        _showWaterReminderNotification();
-      }
-      setState(() {}); // atualiza tempo restante
-    });
-  }
+  Future<void> _initializeServices({required FlutterLocalNotificationsPlugin notificationsPlugin}) async {
+    final prefs = await SharedPreferences.getInstance();
+    userName = prefs.getString('name');
 
-  Duration _timeUntilNextGlass() {
-    final now = DateTime.now();
-    final nextDrinkTime = lastDrinkTime!.add(Duration(minutes: hydrationIntervalMinutes));
-    final difference = nextDrinkTime.difference(now);
-    return difference.isNegative ? Duration.zero : difference;
-  }
+    final newGoalKm = (prefs.getDouble('step_goal_m') ?? 5000) / 1000;
 
-  String _formatDuration(Duration duration) {
-    final minutes = duration.inMinutes;
-    final seconds = duration.inSeconds % 60;
-    return "$minutes min ${seconds.toString().padLeft(2, '0')}s";
-  }
-
-  void _registerGlassOfWater() async {
-    lastDrinkTime = DateTime.now();
-    await _prefs.setString('last_drink_time', lastDrinkTime!.toIso8601String());
-    _startHydrationTimer();
-    setState(() {});
-    _showToast("Copinho registrado 💧");
-  }
-
-  Future<void> _requestAndHandlePermission() async {
-    try {
-      final result = await Permission.activityRecognition.request();
-
-      setState(() {
-        _needsPermission = !result.isGranted;
-      });
-
-      if (result.isGranted) {
-        _startStepCounter();
-      } else {
-        _showToast("Permissão de reconhecimento de atividade negada.");
-      }
-    } catch (e) {
-      debugPrint("Erro ao solicitar permissão: $e");
+    if (newGoalKm != _dailyGoalKm) {
+      _hasCongratulated = false; // Reset quando meta muda
     }
-  }
 
-  void _startStepCounter() {
-    _stepCounterService?.stop();
+    _dailyGoalKm = newGoalKm;
 
-    _stepCounterService = StepCounterService(
-      onDistanceUpdated: (distance) {
+    if (userName == null && !_hasRedirectedToProfile && mounted) {
+      _hasRedirectedToProfile = true;
+      await Future.delayed(Duration.zero);
+      Navigator.pushNamed(context, '/profile').then((value) {
+        _hasRedirectedToProfile = false;
+        _initializeServices(notificationsPlugin: notificationsPlugin);
+      });
+      return;
+    }
+
+    _hydrationService = HydrationService(
+      prefs: prefs,
+      notificationsPlugin: notificationsPlugin,
+      onReminder: _showHydrationModal,
+      onGlassRegistered: () {
         if (mounted) {
-          setState(() {
-            _currentDistance = distance;
-          });
-          _saveDistance(distance);
+          UiHelpers.showToast(context, "Copinho registrado 💧");
         }
       },
     );
+    await _hydrationService.initialize();
 
-    _stepCounterService?.start();
-  }
-
-  Future<void> _saveDistance(double distance) async {
-    try {
-      await _prefs.setDouble('total_distance_today', distance);
-    } catch (e) {
-      debugPrint("Erro ao salvar distância: $e");
-    }
-  }
-
-  Future<void> _redirectToProfile() async {
-    final result = await Navigator.pushNamed(context, '/profile');
-    if (result == true && mounted) {
-      await _reloadGoalAndDistance();
-    }
-  }
-
-  Future<void> _reloadGoalAndDistance() async {
-    try {
-      _stepGoalMeters = _prefs.getDouble('step_goal_m') ?? 5000.0;
-      _currentDistance = _prefs.getDouble('total_distance_today') ?? 0.0;
-      if (mounted) {
-        setState(() {});
-      }
-    } catch (e) {
-      debugPrint("Erro ao recarregar dados: $e");
-    }
-  }
-
-  double _calculateProgress() {
-    final progress = (_currentDistance * 1000 / _stepGoalMeters) * 100;
-    return progress.clamp(0, 100);
-  }
-
-  String _formatDistance(double distanceKm) {
-    return distanceKm.toStringAsFixed(2);
-  }
-
-  void _showToast(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), duration: const Duration(seconds: 3)),
+    _stepService = StepService(
+      prefs: prefs,
+      onDistanceUpdated: (_) => setState(() {}),
     );
+    await _stepService.initialize();
+
+    final hasPermission = await PermissionHelper.checkActivityPermission();
+
+    if (mounted) {
+      setState(() {
+        _needsPermission = !hasPermission;
+        _isInitialized = true;
+      });
+    }
+
+    if (hasPermission) {
+      _stepService.startStepCounter();
+    }
   }
 
   void _showHydrationModal() {
-    if (_isHydrationModalVisible || !mounted) return;
+    if (_isHydrationModalVisible) return;
 
-    setState(() {
-      _isHydrationModalVisible = true;
+    setState(() => _isHydrationModalVisible = true);
+    UiHelpers.showHydrationModal(context, () {
+      _hydrationService.registerGlassOfWater();
+      setState(() => _isHydrationModalVisible = false);
     });
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => AlertDialog(
-        title: const Text("Hora de beber água!"),
-        content: const Text("Já se passaram 30 minutos desde o último copo 💧"),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _registerGlassOfWater();
-              setState(() {
-                _isHydrationModalVisible = false;
-              });
-            },
-            child: const Text("Bebi!"),
-          ),
-        ],
-      ),
-    );
   }
+
+  Future<void> _checkGoalReached() async {
+    final progress = _stepService.calculateProgress();
+
+    if (progress >= 100 && !_hasCongratulated) {
+      _hasCongratulated = true;
+
+      final prefs = await SharedPreferences.getInstance();
+      final goalNotificationEnabled = prefs.getBool('goal_notifications_enabled') ?? true;
+
+      if (goalNotificationEnabled) {
+        await flutterLocalNotificationsPlugin.show(
+          1, // usa um ID diferente de notificação (0 já é hidratação)
+          'Parabéns! 🎉',
+          'Você atingiu sua meta de ${_dailyGoalKm.toStringAsFixed(1)} km hoje!',
+          const NotificationDetails(
+            android: AndroidNotificationDetails(
+              'goal_channel',
+              'Meta Atingida',
+              channelDescription: 'Notificações para quando a meta de passos é atingida',
+              importance: Importance.high,
+              priority: Priority.high,
+              visibility: NotificationVisibility.public,
+            ),
+          ),
+        );
+      }
+    }
+ else if (progress < 100) {
+      _hasCongratulated = false; // Reseta quando progresso cai
+    }
+  }
+
+  Future<void> _requestPermission() async {
+    final granted = await PermissionHelper.requestActivityPermission();
+    if (mounted) {
+      setState(() => _needsPermission = !granted);
+    }
+
+    if (granted) {
+      _stepService.startStepCounter();
+    } else {
+      UiHelpers.showToast(context, "Permissão de reconhecimento de atividade negada.");
+    }
+  }
+
 
   @override
   void dispose() {
-    _stepCounterService?.stop();
-    _hydrationTimer?.cancel();
+    _uiUpdateTimer?.cancel();
+    _hydrationService.dispose();
+    _stepService.dispose();
     super.dispose();
   }
 
@@ -257,58 +181,49 @@ class _HomeScreenState extends State<HomeScreen> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    final progress = _calculateProgress();
-    final timeLeft = _timeUntilNextGlass();
-    final hydrationProgress = (timeLeft.inSeconds / (hydrationIntervalMinutes * 60)).clamp(0.0, 1.0);
-    final steps = (_currentDistance * 1312.3359).toInt();
-    final calories = (_currentDistance * 60).toInt();
-    final activeMinutes = (_currentDistance * 12).toInt();
-    final userName = _prefs.getString('name') ?? 'Usuário';
+    final progress = _stepService.calculateProgress();
+    final timeLeft = _hydrationService.timeUntilNextGlass();
+    final safeTimeLeft = timeLeft.isNegative ? Duration.zero : timeLeft;
+    final hydrationProgress = (safeTimeLeft.inSeconds / (_hydrationService.hydrationIntervalMinutes * 60)).clamp(0.0, 1.0);
+    final metrics = _stepService.getActivityMetrics();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF2F4F6),
       body: SafeArea(
         child: _needsPermission
-            ? Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: ElevatedButton.icon(
-              icon: const Icon(Icons.security),
-              label: const Text("Permitir reconhecimento de atividade"),
-              onPressed: _requestAndHandlePermission,
-            ),
-          ),
-        )
+            ? _buildPermissionRequest()
             : ListView(
           padding: const EdgeInsets.all(16),
           children: [
             Text(
-              "Olá, $userName 👋",
+              "Olá, ${userName ?? 'Usuário'} 👋",
               style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 16),
-            _buildStepGoalProgress(progress),
             const SizedBox(height: 24),
-            _buildHydrationProgress(hydrationProgress, _formatDuration(timeLeft)),
+            _buildHydrationProgress(hydrationProgress, _hydrationService.formatDuration(safeTimeLeft)),
             const SizedBox(height: 12),
-            Center(
-              child: ElevatedButton(
-                onPressed: _registerGlassOfWater,
-                child: const Text("Acabei de beber 💧"),
-              ),
+            PressableButton(
+              label: "Acabei de beber 💧",
+              onPressed: () {
+                _hydrationService.registerGlassOfWater();
+              },
             ),
+
+
+            const SizedBox(height: 24),
+            _buildStepGoalProgress(progress),
             const SizedBox(height: 24),
             Row(
               children: [
-                _buildInfoCard("Distância diária", "${_formatDistance(_currentDistance)} km"),
-                _buildInfoCard("Passos hoje", "$steps"),
+                _buildInfoCard("Distância diária", "${_stepService.formatDistance(_stepService.currentDistance)} km"),
+                _buildInfoCard("Meta diária", "$_dailyGoalKm km"),
               ],
             ),
             const SizedBox(height: 12),
             Row(
               children: [
-                _buildInfoCard("Calorias perdidas", "$calories kcal"),
-                _buildInfoCard("Tempo ativo", "$activeMinutes min"),
+                _buildInfoCard("Calorias perdidas", "${metrics['calories']} kcal"),
+                _buildInfoCard("Passos hoje", "${metrics['steps']}"),
               ],
             ),
           ],
@@ -337,13 +252,25 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 6),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: LinearProgressIndicator(
-                  value: progress / 100,
-                  minHeight: 12,
-                  backgroundColor: Colors.white.withOpacity(0.2),
-                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.lightBlueAccent),
+              Container(
+                height: 20,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.white.withOpacity(0.2),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 500),
+                    curve: Curves.easeInOut,
+                    width: MediaQuery.of(context).size.width * (progress / 100),
+                    child: LinearProgressIndicator(
+                      value: 1.0,
+                      minHeight: 20,
+                      backgroundColor: Colors.transparent,
+                      valueColor: const AlwaysStoppedAnimation<Color>(Colors.lightBlueAccent),
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 4),
@@ -359,30 +286,64 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHydrationProgress(double progress, String timeLabel) {
-    return Center(
-      child: SizedBox(
-        height: 200,
-        width: 200,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            CircularProgressBar(
-              progress: (progress * 100).toDouble(),
-              strokeWidth: 20,
-              backgroundColor: Colors.grey.shade300,
-              progressColor: Colors.lightBlueAccent,
-            ),
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  timeLabel,
-                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white.withOpacity(0.3)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "Progresso de hidratação",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
                 ),
-                const Text("até o próximo copo", style: TextStyle(fontSize: 16)),
-              ],
-            ),
-          ],
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 120,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    CircularProgressBar(
+                      progress: (progress * 100).toDouble(),
+                      strokeWidth: 20,
+                      backgroundColor: Colors.white.withOpacity(0.2),
+                      progressColor: Colors.lightBlueAccent,
+                    ),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          timeLabel,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const Text(
+                          "até o próximo copo",
+                          style: TextStyle(fontSize: 16, color: Colors.black54),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -409,6 +370,19 @@ class _HomeScreenState extends State<HomeScreen> {
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPermissionRequest() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: ElevatedButton.icon(
+          icon: const Icon(Icons.security),
+          label: const Text("Permitir reconhecimento de atividade"),
+          onPressed: _requestPermission,
         ),
       ),
     );
