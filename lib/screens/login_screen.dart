@@ -78,7 +78,7 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 // Título
                 const Text(
-                  "Bem-vindo ao HydraFit",
+                  "Bem-vindo ao HidraFit",
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -163,7 +163,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Link de esqueci senha
+                // Tela de esqueci senha
                 TextButton(
                   onPressed: () {
                     Navigator.of(context).push(
@@ -173,7 +173,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: const Text("Esqueci minha senha"),
                 ),
 
-                // Link de cadastro
+                // Tela de cadastro
                 TextButton(
                   onPressed: () {
                     Navigator.of(context).pushReplacement(

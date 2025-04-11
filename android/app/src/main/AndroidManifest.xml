@@ -5,7 +5,7 @@
     <uses-permission android:name="android.permission.INTERNET"/>
 
     <application
-        android:label="hydrafit"
+        android:label="Hidrafit"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

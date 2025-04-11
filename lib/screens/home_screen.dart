@@ -36,12 +36,12 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _checkAndRequestNotificationPermission();
-    _initializeServices(notificationsPlugin: flutterLocalNotificationsPlugin);
+    _checkAndRequestNotificationPermission(); // Solicito permissão para notificações
+    _initializeServices(notificationsPlugin: flutterLocalNotificationsPlugin); // Inicializo os serviços necessários
     _uiUpdateTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) {
         setState(() {});
-        _checkGoalReached();
+        _checkGoalReached(); // Verifico se a meta foi alcançada
       }
     });
   }
@@ -59,12 +59,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _initializeServices({required FlutterLocalNotificationsPlugin notificationsPlugin}) async {
     final prefs = await SharedPreferences.getInstance();
-    userName = prefs.getString('name');
+    userName = prefs.getString('name'); // Recupero o nome do usuário
 
-    final newGoalKm = (prefs.getDouble('step_goal_m') ?? 5000) / 1000;
+    final newGoalKm = (prefs.getDouble('step_goal_m') ?? 5000) / 1000; // Defino a nova meta de distância
 
     if (newGoalKm != _dailyGoalKm) {
-      _hasCongratulated = false; // Reset quando meta muda
+      _hasCongratulated = false; // Reseto a congratulação se a meta mudar
     }
 
     _dailyGoalKm = newGoalKm;
@@ -74,7 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
       await Future.delayed(Duration.zero);
       Navigator.pushNamed(context, '/profile').then((value) {
         _hasRedirectedToProfile = false;
-        _initializeServices(notificationsPlugin: notificationsPlugin);
+        _initializeServices(notificationsPlugin: notificationsPlugin); // Re-inicializo após redirecionar
       });
       return;
     }
@@ -82,10 +82,10 @@ class _HomeScreenState extends State<HomeScreen> {
     _hydrationService = HydrationService(
       prefs: prefs,
       notificationsPlugin: notificationsPlugin,
-      onReminder: _showHydrationModal,
+      onReminder: _showHydrationModal, // Mostro o modal de hidratação quando necessário
       onGlassRegistered: () {
         if (mounted) {
-          UiHelpers.showToast(context, "Copinho registrado 💧");
+          UiHelpers.showToast(context, "Copinho registrado 💧"); // Aviso que um copo foi registrado
         }
       },
     );
@@ -97,7 +97,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
     await _stepService.initialize();
 
-    final hasPermission = await PermissionHelper.checkActivityPermission();
+    final hasPermission = await PermissionHelper.checkActivityPermission(); // Verifico permissão de atividade
 
     if (mounted) {
       setState(() {
@@ -107,7 +107,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     if (hasPermission) {
-      _stepService.startStepCounter();
+      _stepService.startStepCounter(); // Início da contagem de passos
     }
   }
 
@@ -116,13 +116,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
     setState(() => _isHydrationModalVisible = true);
     UiHelpers.showHydrationModal(context, () {
-      _hydrationService.registerGlassOfWater();
+      _hydrationService.registerGlassOfWater(); // Registro de copo de água
       setState(() => _isHydrationModalVisible = false);
     });
   }
 
   Future<void> _checkGoalReached() async {
-    final progress = _stepService.calculateProgress();
+    final progress = _stepService.calculateProgress(); // Calculo o progresso
 
     if (progress >= 100 && !_hasCongratulated) {
       _hasCongratulated = true;
@@ -132,7 +132,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
       if (goalNotificationEnabled) {
         await flutterLocalNotificationsPlugin.show(
-          1, // usa um ID diferente de notificação (0 já é hidratação)
+          1, // ID diferente para a notificação de meta
           'Parabéns! 🎉',
           'Você atingiu sua meta de ${_dailyGoalKm.toStringAsFixed(1)} km hoje!',
           const NotificationDetails(
@@ -147,9 +147,8 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         );
       }
-    }
- else if (progress < 100) {
-      _hasCongratulated = false; // Reseta quando progresso cai
+    } else if (progress < 100) {
+      _hasCongratulated = false; // Reseto se o progresso cai
     }
   }
 
@@ -160,12 +159,11 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     if (granted) {
-      _stepService.startStepCounter();
+      _stepService.startStepCounter(); // Início da contagem de passos após permissão
     } else {
-      UiHelpers.showToast(context, "Permissão de reconhecimento de atividade negada.");
+      UiHelpers.showToast(context, "Permissão de reconhecimento de atividade negada."); // Aviso de permissão negada
     }
   }
-
 
   @override
   void dispose() {
@@ -178,7 +176,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     if (!_isInitialized) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(body: Center(child: CircularProgressIndicator())); // Carregando...
     }
 
     final progress = _stepService.calculateProgress();
@@ -191,7 +189,7 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: const Color(0xFFF2F4F6),
       body: SafeArea(
         child: _needsPermission
-            ? _buildPermissionRequest()
+            ? _buildPermissionRequest() // Solicito permissão se necessário
             : ListView(
           padding: const EdgeInsets.all(16),
           children: [
@@ -200,30 +198,29 @@ class _HomeScreenState extends State<HomeScreen> {
               style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 24),
-            _buildHydrationProgress(hydrationProgress, _hydrationService.formatDuration(safeTimeLeft)),
+            _buildHydrationProgress(hydrationProgress, _hydrationService.formatDuration(safeTimeLeft)), // Mostro o progresso de hidratação
             const SizedBox(height: 12),
             PressableButton(
               label: "Acabei de beber 💧",
               onPressed: () {
-                _hydrationService.registerGlassOfWater();
+                _hydrationService.registerGlassOfWater(); // Registro de copo de água
               },
             ),
 
-
             const SizedBox(height: 24),
-            _buildStepGoalProgress(progress),
+            _buildStepGoalProgress(progress), // Mostro o progresso da meta de passos
             const SizedBox(height: 24),
             Row(
               children: [
-                _buildInfoCard("Distância diária", "${_stepService.formatDistance(_stepService.currentDistance)} km"),
-                _buildInfoCard("Meta diária", "$_dailyGoalKm km"),
+                _buildInfoCard("Distância diária", "${_stepService.formatDistance(_stepService.currentDistance)} km"), // Distância percorrida
+                _buildInfoCard("Meta diária", "$_dailyGoalKm km"), // Meta diária
               ],
             ),
             const SizedBox(height: 12),
             Row(
               children: [
-                _buildInfoCard("Calorias perdidas", "${metrics['calories']} kcal"),
-                _buildInfoCard("Passos hoje", "${metrics['steps']}"),
+                _buildInfoCard("Calorias perdidas", "${metrics['calories']} kcal"), // Calorias queimadas
+                _buildInfoCard("Passos hoje", "${metrics['steps']}"), // Passos dados
               ],
             ),
           ],
@@ -275,7 +272,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                "${progress.toInt()}%",
+                "${progress.toInt()}%", // Mostro o progresso em porcentagem
                 style: const TextStyle(color: Colors.black54),
               ),
             ],
@@ -326,7 +323,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          timeLabel,
+                          timeLabel, // Mostro o tempo até o próximo copo
                           style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -361,12 +358,12 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           children: [
             Text(
-              title,
+              title, // Título da informação
               style: const TextStyle(fontSize: 16, color: Colors.black54),
             ),
             const SizedBox(height: 8),
             Text(
-              value,
+              value, // Valor da informação
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
             ),
           ],
@@ -382,7 +379,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: ElevatedButton.icon(
           icon: const Icon(Icons.security),
           label: const Text("Permitir reconhecimento de atividade"),
-          onPressed: _requestPermission,
+          onPressed: _requestPermission, // Solicito permissão
         ),
       ),
     );

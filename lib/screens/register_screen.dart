@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../helpers/google_sign_in_helper.dart';
 import '../../helpers/register_helper.dart';
+import 'email_confirmation_screen.dart';
 import 'login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -20,12 +21,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (RegisterHelper.getCurrentUser() != null) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final user = RegisterHelper.getCurrentUser();
+      await user?.reload();
+
+      if (user != null && user.emailVerified) {
         _goToHome();
+      } else if (user != null && !user.emailVerified) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const EmailConfirmationScreen()),
+        );
       }
     });
   }
+
 
   void _goToHome() {
     Navigator.of(context).pushReplacementNamed('/main');
@@ -50,7 +59,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     try {
       final user = await RegisterHelper.registerUser(name, email, password);
       if (user != null) {
-        _goToHome();
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const EmailConfirmationScreen()),
+        );
       }
     } on FirebaseAuthException catch (e) {
       switch (e.code) {
@@ -92,14 +103,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Título
                 const Text(
                   "Criar Conta",
                   style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 32),
-
-                // Campo Nome
                 TextField(
                   controller: _nameController,
                   textCapitalization: TextCapitalization.words,
@@ -109,8 +117,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-
-                // Campo Email
                 TextField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
@@ -120,8 +126,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-
-                // Campo Senha
                 TextField(
                   controller: _passwordController,
                   obscureText: true,
@@ -131,8 +135,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-
-                // Botão Registrar
                 SizedBox(
                   width: double.infinity,
                   height: 48,
@@ -148,8 +150,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-
-                // Separador
                 Row(
                   children: const [
                     Expanded(child: Divider()),
@@ -161,8 +161,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ],
                 ),
                 const SizedBox(height: 16),
-
-                // Botão Google
                 SizedBox(
                   width: double.infinity,
                   height: 48,
@@ -186,8 +184,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-
-                // Link para login
                 TextButton(
                   onPressed: () {
                     Navigator.of(context).pushReplacement(
@@ -196,8 +192,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   },
                   child: const Text("Já tem conta? Entrar"),
                 ),
-
-                // Mensagem de erro
                 if (_errorMessage != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 12),

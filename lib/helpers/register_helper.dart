@@ -11,7 +11,12 @@ class RegisterHelper {
       password: password,
     );
 
-    await credential.user?.updateDisplayName(name);
-    return credential.user;
+    final user = credential.user;
+    if (user != null) {
+      await user.updateDisplayName(name);
+      await user.sendEmailVerification();
+    }
+
+    return user;
   }
 }

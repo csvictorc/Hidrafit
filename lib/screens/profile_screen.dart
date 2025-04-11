@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import '../helpers/profile_helper.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -11,6 +11,7 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _stepGoalController = TextEditingController();
   final TextEditingController _hydrationIntervalController = TextEditingController();
 
@@ -18,9 +19,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   double _stepGoalMeters = 5000;
   int _hydrationInterval = 30;
 
-  User? _user;
   bool _isLoading = true;
-
   String _cachedName = 'Usuário';
   String _cachedPhotoUrl = '';
   bool _usingCachedData = false;
@@ -41,6 +40,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _stepGoalMeters = _prefs.getDouble('step_goal_m') ?? 5000;
       _hydrationInterval = _prefs.getInt('hydration_interval') ?? 30;
 
+      _nameController.text = _cachedName;
       _stepGoalController.text = (_stepGoalMeters / 1000).toStringAsFixed(1);
       _hydrationIntervalController.text = _hydrationInterval.toString();
 
@@ -48,11 +48,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _isLoading = false;
       });
 
-      await _updateProfileFromFirebase();
+      var connectivityResult = await Connectivity().checkConnectivity();
+      if (connectivityResult == ConnectivityResult.none) {
+        setState(() {
+          _usingCachedData = true;
+          _connectionChecked = true;
+        });
+        return;
+      }
 
-      setState(() {
-        _connectionChecked = true;
-      });
+      await ProfileHelper.updateFirebaseProfileIfNeeded(
+        prefs: _prefs,
+        onProfileUpdated: (name, photoUrl) {
+          if (mounted) {
+            setState(() {
+              _cachedName = name;
+              _cachedPhotoUrl = photoUrl;
+              _nameController.text = name;
+              _usingCachedData = false;
+              _connectionChecked = true;
+            });
+          }
+        },
+      );
     } catch (e) {
       debugPrint('Erro ao carregar perfil: $e');
       setState(() {
@@ -63,50 +81,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Future<void> _updateProfileFromFirebase() async {
-    try {
-      var connectivityResult = await Connectivity().checkConnectivity();
-      if (connectivityResult == ConnectivityResult.none) {
-        setState(() {
-          _usingCachedData = true;
-          _connectionChecked = true;
-        });
-        return;
-      }
-
-      _user = FirebaseAuth.instance.currentUser;
-
-      if (_user != null) {
-        final newName = _user!.displayName ?? 'Usuário';
-        final newPhotoUrl = _user!.photoURL ?? '';
-
-        if (newName != _cachedName || newPhotoUrl != _cachedPhotoUrl) {
-          await _prefs.setString('name', newName);
-          await _prefs.setString('photo_url', newPhotoUrl);
-
-          if (mounted) {
-            setState(() {
-              _cachedName = newName;
-              _cachedPhotoUrl = newPhotoUrl;
-              _usingCachedData = false;
-            });
-          }
-        }
-      }
-    } catch (e) {
-      debugPrint('Erro ao atualizar do Firebase: $e');
-      if (mounted) {
-        setState(() {
-          _usingCachedData = true;
-          _connectionChecked = true;
-        });
-      }
-    }
-  }
-
-  Future<void> _saveStepGoal() async {
+  Future<void> _saveProfile() async {
+    final newName = _nameController.text.trim();
     final parsedStepGoal = double.tryParse(_stepGoalController.text.replaceAll(',', '.'));
     final parsedHydrationInterval = int.tryParse(_hydrationIntervalController.text);
+
+    if (newName.isEmpty) {
+      _showToast('Digite um nome válido.');
+      return;
+    }
 
     if (parsedStepGoal == null || parsedStepGoal <= 0) {
       _showToast('Digite uma meta válida em quilômetros.');
@@ -119,16 +102,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     try {
+      await _prefs.setString('name', newName);
       await _prefs.setDouble('step_goal_m', parsedStepGoal * 1000);
       await _prefs.setInt('hydration_interval', parsedHydrationInterval);
+      await ProfileHelper.updateDisplayName(newName);
 
-      _showToast('Preferências salvas com sucesso.');
+      _showToast('Perfil salvo com sucesso.');
 
       if (mounted) {
         Navigator.pushReplacementNamed(context, '/main');
       }
     } catch (e) {
-      _showToast('Erro ao salvar preferências. Tente novamente.');
+      _showToast('Erro ao salvar perfil. Tente novamente.');
       debugPrint('Erro ao salvar dados: $e');
     }
   }
@@ -143,13 +128,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Widget _buildProfilePhoto() {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        CircleAvatar(
+          radius: 50,
+          backgroundColor: Colors.grey.shade300,
+          backgroundImage: _cachedPhotoUrl.isNotEmpty ? NetworkImage(_cachedPhotoUrl) : null,
+          child: _cachedPhotoUrl.isEmpty
+              ? const Icon(Icons.person, size: 50, color: Colors.white)
+              : null,
+        ),
+        if (_usingCachedData && _connectionChecked)
+          Positioned(
+            top: 0,
+            right: 0,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: const BoxDecoration(
+                color: Colors.orange,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.cloud_off, size: 16, color: Colors.white),
+            ),
+          ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
+        body: Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -173,56 +185,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
           padding: const EdgeInsets.all(24),
           child: ListView(
             children: [
-              Center(
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    if (_cachedPhotoUrl.isNotEmpty)
-                      CircleAvatar(
-                        radius: 50,
-                        backgroundImage: NetworkImage(_cachedPhotoUrl),
-                      )
-                    else
-                      const CircleAvatar(
-                        radius: 50,
-                        child: Icon(Icons.person, size: 40),
-                      ),
-                    if (_usingCachedData && _connectionChecked)
-                      Positioned(
-                        right: 0,
-                        bottom: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: const BoxDecoration(
-                            color: Colors.orange,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.cloud_off,
-                            size: 20,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                  ],
+              Center(child: _buildProfilePhoto()),
+              const SizedBox(height: 24),
+              TextField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Nome',
+                  border: OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 16),
-              Center(
-                child: Text(
-                  _cachedName,
-                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                ),
-              ),
-              if (_usingCachedData && _connectionChecked)
-                const Padding(
-                  padding: EdgeInsets.only(top: 8),
-                  child: Text(
-                    'Modo offline - dados podem não estar atualizados',
-                    style: TextStyle(color: Colors.grey, fontSize: 12),
-                  ),
-                ),
-              const SizedBox(height: 32),
               TextField(
                 controller: _stepGoalController,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -240,60 +212,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   border: OutlineInputBorder(),
                 ),
               ),
-              const SizedBox(height: 16),
-
-              // Botão Salvar com estilo Neumórfico
-              GestureDetector(
-                onTap: _saveStepGoal,
-                child: Container(
-                  height: 50,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Colors.white,
-                        offset: Offset(-3, -3),
-                        blurRadius: 6,
-                        spreadRadius: 1,
-                      ),
-                      BoxShadow(
-                        color: Colors.black12,
-                        offset: Offset(1, 3),
-                        blurRadius: 1,
-                        spreadRadius: 1,
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.save, color: Colors.black45),
-                      const SizedBox(width: 8),
-                      Stack(
-                        children: [
-                          Text(
-                            'Salvar',
-                            style: TextStyle(
-                              fontSize: 18,
-                              foreground: Paint()
-                                ..style = PaintingStyle.stroke
-                                ..strokeWidth = 1
-                                ..color = Colors.black45,
-                            ),
-                          ),
-                          const Text(
-                            'Salvar',
-                            style: TextStyle(
-                              fontSize: 18,
-                              color: Colors.black45,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: _saveProfile,
+                icon: const Icon(Icons.save),
+                label: const Text('Salvar'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  textStyle: const TextStyle(fontSize: 16),
                 ),
               ),
             ],
