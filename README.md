@@ -7,6 +7,14 @@ HidraFit é um aplicativo projetado para ajudar usuários a manter hábitos saud
 - **Acompanhamento de Metas Diárias de Caminhada**
 - **Lembretes Inteligentes para Hidratação**
 
+## Capturas de Tela
+
+<p align="center">
+  <img src="screenshots/home.jpg" alt="Tela Inicial" width="300"/>
+  <img src="screenshots/profile.jpg" alt="Tela de Perfil" width="300"/>
+  <img src="screenshots/config.jpg" alt="Tela de Configurações" width="300"/>
+</p>
+
 ## Funcionalidades Principais
 
 ### 🚶‍♂️ Monitoramento de Passos
