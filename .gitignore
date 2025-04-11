@@ -18,7 +18,7 @@ migrate_working_dir/
 *.iws
 .idea/
 
-# VSCode (comente essa linha se quiser versionar .vscode)
+# VSCode
 .vscode/
 
 # Flutter/Dart/Pub related
@@ -45,10 +45,19 @@ app.*.map.json
 # Firebase
 android/app/google-services.json
 ios/Runner/GoogleService-Info.plist
-firebase_options.dart
+lib/firebase_options.dart
 
 # Arquivos de ambiente e chaves
 .env
 *.keystore
 *.jks
 key.properties
+*.pem
+*.p12
+*.crt
+*.key
+
+# Arquivos de cache e sincronização
+.packages
+.flutter-versions
+.metadata
