@@ -53,10 +53,11 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyAUT-eoPmKTGfWM2c2YU3eLCftE1O1wdVI',
-    appId: '1:650437373998:android:4fbbc9432300317c7defbf',
-    messagingSenderId: '650437373998',
-    projectId: 'hydrafit-181ff',
-    storageBucket: 'hydrafit-181ff.firebasestorage.app',
+    apiKey: 'AIzaSyAP5jPPbtJEEE8Qy5tiZ9EX9HkakXuU7cM',
+    appId: '1:398036086338:android:b7eb17b58c20aa061ec7db',
+    messagingSenderId: '398036086338',
+    projectId: 'apphidrafit',
+    storageBucket: 'apphidrafit.firebasestorage.app',
   );
+
 }

@@ -15,12 +15,12 @@ val keystoreProperties = Properties().apply {
 }
 
 android {
-    namespace = "com.nhspsoftware.hydrafit"
+    namespace = "com.nhspsoftware.hidrafit"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = "29.0.13113456"
 
     defaultConfig {
-        applicationId = "com.nhspsoftware.hydrafit"
+        applicationId = "com.nhspsoftware.hidrafit"
         minSdk = 23
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -29,28 +29,31 @@ android {
         manifestPlaceholders["enableDeferredComponents"] = "false"
     }
 
-    signingConfigs {
-        create("release") {
-            storeFile = file(keystoreProperties["storeFile"] as String)
-            storePassword = keystoreProperties["storePassword"] as String
-            keyAlias = keystoreProperties["keyAlias"] as String
-            keyPassword = keystoreProperties["keyPassword"] as String
+    android {
+        signingConfigs {
+            create("release") {
+                storeFile = file(keystoreProperties["storeFile"] as String)
+                storePassword = keystoreProperties["storePassword"] as String
+                keyAlias = keystoreProperties["keyAlias"] as String
+                keyPassword = keystoreProperties["keyPassword"] as String
+            }
+        }
+
+        buildTypes {
+            getByName("release") {
+                isMinifyEnabled = true
+                isShrinkResources = true
+                isZipAlignEnabled = true
+                isDebuggable = false
+                signingConfig = signingConfigs.getByName("release")
+                proguardFiles(
+                    getDefaultProguardFile("proguard-android-optimize.txt"),
+                    "proguard-rules.pro"
+                )
+            }
         }
     }
 
-    buildTypes {
-        getByName("release") {
-            isMinifyEnabled = true
-            isShrinkResources = true
-            isZipAlignEnabled = true
-            isDebuggable = false
-            signingConfig = signingConfigs.getByName("release")
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
-    }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11

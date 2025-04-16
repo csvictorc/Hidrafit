@@ -1,4 +1,4 @@
-package com.nhspsoftware.hydrafit
+package com.nhspsoftware.hidrafit
 
 import io.flutter.embedding.android.FlutterActivity
 
