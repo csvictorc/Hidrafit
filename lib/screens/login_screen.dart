@@ -4,9 +4,12 @@ import '../../helpers/google_sign_in_helper.dart';
 import '../../helpers/login_helper.dart';
 import 'register_screen.dart';
 import 'forgot_password_screen.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  final void Function(Locale locale) onLocaleChange;
+
+  const LoginScreen({super.key, required this.onLocaleChange});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -76,7 +79,6 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Título
                 const Text(
                   "Bem-vindo ao HidraFit",
                   style: TextStyle(
@@ -86,7 +88,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 32),
 
-                // Campo de email
                 TextField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
@@ -97,7 +98,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Campo de senha
                 TextField(
                   controller: _passwordController,
                   obscureText: true,
@@ -108,24 +108,30 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Botão Entrar
                 SizedBox(
                   width: double.infinity,
                   height: 48,
-                  child: FilledButton(
+                  child: ElevatedButton(
                     onPressed: _signInWithEmail,
-                    style: FilledButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                    style: ElevatedButton.styleFrom(
+                      elevation: 4,
                       backgroundColor: Colors.blueAccent,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                     ),
-                    child: const Text("Entrar"),
+                    child: const Text(
+                      "Entrar",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
 
-                // Separador
                 Row(
                   children: const [
                     Expanded(child: Divider()),
@@ -138,32 +144,35 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Botão Google
                 SizedBox(
                   width: double.infinity,
                   height: 48,
                   child: OutlinedButton.icon(
                     onPressed: _signInWithGoogle,
                     icon: Image.asset(
-                      'assets/google_logo.png', // ✅ Adicione o logo do Google aqui
+                      'assets/google_logo.png',
                       height: 24,
                       width: 24,
                     ),
                     label: const Text(
-                      "Entrar com Google",
-                      style: TextStyle(color: Colors.black87),
+                      "Continuar com o Google",
+                      style: TextStyle(
+                        color: Colors.black87,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     style: OutlinedButton.styleFrom(
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(14),
                       ),
                       side: const BorderSide(color: Colors.grey),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
                     ),
                   ),
                 ),
                 const SizedBox(height: 16),
 
-                // Tela de esqueci senha
                 TextButton(
                   onPressed: () {
                     Navigator.of(context).push(
@@ -172,18 +181,19 @@ class _LoginScreenState extends State<LoginScreen> {
                   },
                   child: const Text("Esqueci minha senha"),
                 ),
-
-                // Tela de cadastro
                 TextButton(
                   onPressed: () {
                     Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                        MaterialPageRoute(
+                          builder: (_) => RegisterScreen(
+                              onLocaleChange: widget.onLocaleChange, )
+                      ),
                     );
                   },
-                  child: const Text("Não tem conta? Cadastre-se"),
+                  child: Text(AppLocalizations.of(context)!.dontHaveAccountSignUp),
                 ),
 
-                // Mensagem de erro
+
                 if (_errorMessage != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 12),

@@ -1,0 +1,14 @@
+{
+  "welcome": "Bem-vindo ao HidraFit",
+  "googleSignInError": "Erro ao autenticar com o Google",
+  "guestSignInError": "Erro ao entrar como convidado",
+  "continueWithGoogle": "Continuar com o Google",
+  "signInAsGuest": "Entrar como Convidado",
+  "alreadyHaveAccount": "Já tem conta? Entrar",
+  "dontHaveAccountSignUp": "Não tem conta? Cadastre-se",
+  "appTitle": "HidraFit",
+  "chooseLanguage": "Alterar Idioma",
+  "changeLanguage": "Mudar Idioma",
+  "portuguese": "Português (Brasil)",
+  "english": "Inglês (EUA)"
+}
