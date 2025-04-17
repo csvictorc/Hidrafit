@@ -29,11 +29,6 @@ HidraFit is an app designed to help users maintain healthy habits through:
 - Customizable interval settings
 - Gentle notifications to remind you to drink water
 
-## Technologies Used
-
-- **Flutter** (Cross-platform framework)
-- **Firebase** (Backend and authentication)
-
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
