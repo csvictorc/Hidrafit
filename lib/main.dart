@@ -10,6 +10,7 @@ import 'screens/main_screen.dart';
 import 'screens/profile_screen.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
@@ -53,14 +54,41 @@ class MyApp extends StatefulWidget {
 
   @override
   State<MyApp> createState() => _MyAppState();
+
+  static void setLocale(BuildContext context, Locale locale) {
+    _MyAppState? state = context.findAncestorStateOfType<_MyAppState>();
+    state?._setLocale(locale);
+  }
 }
+
+
 
 class _MyAppState extends State<MyApp> {
   Locale? _locale;
 
-  void _setLocale(Locale locale) {
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedLocale();
+  }
+
+  // Carregar o idioma salvo nas preferências
+  Future<void> _loadSavedLocale() async {
+    final prefs = await SharedPreferences.getInstance();
+    final langCode = prefs.getString('locale');
+    if (langCode != null) {
+      setState(() {
+        _locale = Locale(langCode); // Atualiza o locale
+      });
+    }
+  }
+
+  // Salvar o idioma selecionado nas preferências e atualizar o locale
+  void _setLocale(Locale locale) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('locale', locale.languageCode);
     setState(() {
-      _locale = locale;
+      _locale = locale; // Atualiza o estado com o novo idioma
     });
   }
 
@@ -68,9 +96,9 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'HidraFit',
-      locale: _locale,
+      locale: _locale, // Definir o locale baseado na variável de estado
       localizationsDelegates: const [
-        AppLocalizations.delegate,
+        AppLocalizations.delegate, // Carrega as traduções
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
@@ -80,7 +108,6 @@ class _MyAppState extends State<MyApp> {
         Locale('pt'),
       ],
       localeResolutionCallback: (locale, supportedLocales) {
-        if (_locale != null) return _locale;
         for (var supportedLocale in supportedLocales) {
           if (supportedLocale.languageCode == locale?.languageCode) {
             return supportedLocale;
@@ -104,6 +131,7 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
+  // Definir a rota inicial baseado no estado de autenticação do usuário
   String _getInitialRoute() {
     final user = FirebaseAuth.instance.currentUser;
     return user != null ? '/main' : '/register';

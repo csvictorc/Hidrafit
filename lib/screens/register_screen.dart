@@ -4,6 +4,8 @@ import 'package:video_player/video_player.dart';
 import '../../helpers/google_sign_in_helper.dart';
 import 'login_screen.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 
 class RegisterScreen extends StatefulWidget {
   final void Function(Locale) onLocaleChange;
@@ -69,7 +71,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void _toggleLanguage() {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (context) {
         return AlertDialog(
           title: Text(AppLocalizations.of(context)!.chooseLanguage),
           content: Column(
@@ -77,14 +79,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
             children: [
               ListTile(
                 title: Text(AppLocalizations.of(context)!.english),
-                onTap: () {
+                onTap: () async {
+                  await _setLocale(const Locale('en'));
                   widget.onLocaleChange(const Locale('en'));
                   Navigator.of(context).pop();
                 },
               ),
               ListTile(
                 title: Text(AppLocalizations.of(context)!.portuguese),
-                onTap: () {
+                onTap: () async {
+                  await _setLocale(const Locale('pt'));
                   widget.onLocaleChange(const Locale('pt'));
                   Navigator.of(context).pop();
                 },
@@ -96,6 +100,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
+  Future<void> _setLocale(Locale locale) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('locale', locale.languageCode);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -125,7 +133,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       children: [
                         Text(
                           AppLocalizations.of(context)!.welcome,
-                          style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
+                          style: const TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
                         const SizedBox(height: 40),
                         SizedBox(
@@ -190,7 +202,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           },
                           child: Text(
                             AppLocalizations.of(context)!.alreadyHaveAccount,
-                            style: const TextStyle(color: Colors.white70, fontSize: 15),
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 15,
+                            ),
                           ),
                         ),
                         if (_errorMessage != null)

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../helpers/profile_helper.dart';
@@ -20,7 +21,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   int _hydrationInterval = 30;
 
   bool _isLoading = true;
-  String _cachedName = 'Usuário';
+  String _cachedName = '';
   String _cachedPhotoUrl = '';
   bool _usingCachedData = false;
   bool _connectionChecked = false;
@@ -35,7 +36,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       _prefs = await SharedPreferences.getInstance();
 
-      _cachedName = _prefs.getString('name') ?? 'Usuário';
+      _cachedName = _prefs.getString('name') ?? '';
       _cachedPhotoUrl = _prefs.getString('photo_url') ?? '';
       _stepGoalMeters = _prefs.getDouble('step_goal_m') ?? 5000;
       _hydrationInterval = _prefs.getInt('hydration_interval') ?? 30;
@@ -82,22 +83,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _saveProfile() async {
+    final loc = AppLocalizations.of(context)!;
     final newName = _nameController.text.trim();
     final parsedStepGoal = double.tryParse(_stepGoalController.text.replaceAll(',', '.'));
     final parsedHydrationInterval = int.tryParse(_hydrationIntervalController.text);
 
     if (newName.isEmpty) {
-      _showToast('Digite um nome válido.');
+      _showToast(loc.invalidName);
       return;
     }
 
     if (parsedStepGoal == null || parsedStepGoal <= 0) {
-      _showToast('Digite uma meta válida em quilômetros.');
+      _showToast(loc.invalidStepGoal);
       return;
     }
 
     if (parsedHydrationInterval == null || parsedHydrationInterval <= 0) {
-      _showToast('Digite um intervalo válido para hidratação (minutos).');
+      _showToast(loc.invalidHydrationInterval);
       return;
     }
 
@@ -107,13 +109,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await _prefs.setInt('hydration_interval', parsedHydrationInterval);
       await ProfileHelper.updateDisplayName(newName);
 
-      _showToast('Perfil salvo com sucesso.');
+      _showToast(loc.profileSaved);
 
       if (mounted) {
         Navigator.pushReplacementNamed(context, '/main');
       }
     } catch (e) {
-      _showToast('Erro ao salvar perfil. Tente novamente.');
+      _showToast(loc.profileSaveError);
       debugPrint('Erro ao salvar dados: $e');
     }
   }
@@ -159,6 +161,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+
     if (_isLoading) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
@@ -167,7 +171,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Perfil'),
+        title: Text(loc.profileTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -189,34 +193,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 24),
               TextField(
                 controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Nome',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: loc.nameLabel,
+                  border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: _stepGoalController,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(
-                  labelText: 'Meta diária (km)',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: loc.dailyGoalLabel,
+                  border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: _hydrationIntervalController,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Intervalo entre copos de água (min)',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: loc.hydrationIntervalLabel,
+                  border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 24),
               ElevatedButton.icon(
                 onPressed: _saveProfile,
                 icon: const Icon(Icons.save),
-                label: const Text('Salvar'),
+                label: Text(loc.saveButton),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   textStyle: const TextStyle(fontSize: 16),

@@ -1,8 +1,0 @@
-{
-  "welcome": "Welcome to HidraFit",
-  "continue_with_google": "Continue with Google",
-  "sign_in_as_guest": "Sign in as Guest",
-  "already_have_account": "Already have an account? Sign in",
-  "google_sign_in_error": "Error signing in with Google",
-  "guest_sign_in_error": "Error signing in as guest"
-}
