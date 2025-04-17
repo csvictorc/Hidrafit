@@ -31,7 +31,7 @@ class GoogleSignInHelper {
 
       return userCredential.user;
     } catch (e) {
-      print("Erro durante o login com o Google: $e");
+      print("Erro durante o login: $e");
       rethrow;
     }
   }
