@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:video_player/video_player.dart';
 import '../../helpers/google_sign_in_helper.dart';
-import '../../helpers/register_helper.dart';
-import 'email_confirmation_screen.dart';
 import 'login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -13,28 +12,26 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
   String? _errorMessage;
+  late VideoPlayerController _videoController;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final user = RegisterHelper.getCurrentUser();
-      await user?.reload();
-
-      if (user != null && user.emailVerified) {
-        _goToHome();
-      } else if (user != null && !user.emailVerified) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const EmailConfirmationScreen()),
-        );
-      }
-    });
+    _videoController = VideoPlayerController.asset('assets/videos/background.mp4')
+      ..initialize().then((_) {
+        _videoController.setLooping(true);
+        _videoController.setVolume(0);
+        _videoController.play();
+        setState(() {});
+      });
   }
 
+  @override
+  void dispose() {
+    _videoController.dispose();
+    super.dispose();
+  }
 
   void _goToHome() {
     Navigator.of(context).pushReplacementNamed('/main');
@@ -46,43 +43,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
   }
 
-  Future<void> _registerUser() async {
-    final name = _nameController.text.trim();
-    final email = _emailController.text.trim();
-    final password = _passwordController.text.trim();
-
-    if (name.isEmpty || email.isEmpty || password.isEmpty) {
-      _showError("Preencha todos os campos");
-      return;
-    }
-
-    try {
-      final user = await RegisterHelper.registerUser(name, email, password);
-      if (user != null) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const EmailConfirmationScreen()),
-        );
-      }
-    } on FirebaseAuthException catch (e) {
-      switch (e.code) {
-        case 'weak-password':
-          _showError("A senha é muito fraca. Tente uma senha mais forte.");
-          break;
-        case 'invalid-email':
-          _showError("E-mail inválido. Verifique o formato.");
-          break;
-        case 'email-already-in-use':
-          _showError("O e-mail já está em uso. Tente outro.");
-          break;
-        default:
-          _showError("Erro ao registrar: ${e.message}");
-          break;
-      }
-    } catch (_) {
-      _showError("Erro ao registrar: erro inesperado");
-    }
-  }
-
   Future<void> _signInWithGoogle() async {
     final user = await GoogleSignInHelper.handleGoogleSignIn();
     if (user != null) {
@@ -92,119 +52,126 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
+  Future<void> _signInAsGuest() async {
+    try {
+      await FirebaseAuth.instance.signInAnonymously();
+      _goToHome();
+    } on FirebaseAuthException catch (e) {
+      _showError("Erro ao entrar como convidado: ${e.message}");
+    } catch (_) {
+      _showError("Erro ao entrar como convidado");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text(
-                  "Criar Conta",
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 32),
-                TextField(
-                  controller: _nameController,
-                  textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(
-                    labelText: "Nome",
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    labelText: "E-mail",
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _passwordController,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: "Senha",
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: FilledButton(
-                    onPressed: _registerUser,
-                    style: FilledButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+      backgroundColor: Colors.black,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (_videoController.value.isInitialized)
+            FittedBox(
+              fit: BoxFit.cover,
+              child: SizedBox(
+                width: _videoController.value.size.width,
+                height: _videoController.value.size.height,
+                child: VideoPlayer(_videoController),
+              ),
+            ),
+          Container(
+            color: Colors.black.withOpacity(0.5),
+          ),
+          SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      "Bem-vindo ao HidraFit",
+                      style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
+                    const SizedBox(height: 40),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton.icon(
+                        onPressed: _signInWithGoogle,
+                        icon: Image.asset(
+                          'assets/google_logo.png',
+                          height: 26,
+                          width: 26,
+                        ),
+                        label: const Text(
+                          "Continuar com o Google",
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.black87,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          elevation: 6,
+                          backgroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                        ),
                       ),
-                      backgroundColor: Colors.blueAccent,
                     ),
-                    child: const Text("Registrar"),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: const [
-                    Expanded(child: Divider()),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8),
-                      child: Text("ou"),
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton(
+                        onPressed: _signInAsGuest,
+                        style: ElevatedButton.styleFrom(
+                          elevation: 4,
+                          backgroundColor: Colors.blueAccent,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        child: const Text(
+                          "Entrar como Convidado",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
                     ),
-                    Expanded(child: Divider()),
+                    const SizedBox(height: 24),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pushReplacement(
+                          MaterialPageRoute(builder: (_) => const LoginScreen()),
+                        );
+                      },
+                      child: const Text(
+                        "Já tem conta? Entrar",
+                        style: TextStyle(color: Colors.white70, fontSize: 15),
+                      ),
+                    ),
+                    if (_errorMessage != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: Text(
+                          _errorMessage!,
+                          style: const TextStyle(color: Colors.redAccent),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
                   ],
                 ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: OutlinedButton.icon(
-                    onPressed: _signInWithGoogle,
-                    icon: Image.asset(
-                      'assets/google_logo.png',
-                      height: 24,
-                      width: 24,
-                    ),
-                    label: const Text(
-                      "Entrar com Google",
-                      style: TextStyle(color: Colors.black87),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      side: const BorderSide(color: Colors.grey),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(builder: (_) => const LoginScreen()),
-                    );
-                  },
-                  child: const Text("Já tem conta? Entrar"),
-                ),
-                if (_errorMessage != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: Text(
-                      _errorMessage!,
-                      style: const TextStyle(color: Colors.red),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-              ],
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
