@@ -1,44 +1,44 @@
-# HidraFit - Seu Acompanhante de Saúde Diário
+# HidraFit - Your Daily Health Companion
 
-## Visão Geral do Projeto
+## Project Overview
 
-HidraFit é um aplicativo projetado para ajudar usuários a manter hábitos saudáveis através de:
+HidraFit is an app designed to help users maintain healthy habits through:
 
-- **Acompanhamento de Metas Diárias de Caminhada**
-- **Lembretes Inteligentes para Hidratação**
+- **Daily Walking Goal Tracking**
+- **Smart Reminders for Hydration**
 
-## Capturas de Tela
+## Screenshots
 
 <p align="center">
-  <img src="screenshots/home.jpg" alt="Tela Inicial" width="300"/>
-  <img src="screenshots/profile.jpg" alt="Tela de Perfil" width="300"/>
-  <img src="screenshots/config.jpg" alt="Tela de Configurações" width="300"/>
+  <img src="screenshots/home.jpg" alt="Home Screen" width="300"/>
+  <img src="screenshots/profile.jpg" alt="Profile Screen" width="300"/>
+  <img src="screenshots/config.jpg" alt="Settings Screen" width="300"/>
 </p>
 
-## Funcionalidades Principais
+## Main Features
 
-### 🚶‍♂️ Monitoramento de Passos
+### 🚶‍♂️ Step Monitoring
 
-- Definição de metas diárias personalizadas
-- Acompanhamento em tempo real do progresso
-- Gráfico visual do histórico de atividades
-- Integração com sensores do dispositivo
+- Customizable daily goal setting
+- Real-time progress tracking
+- Visual graph of activity history
+- Integration with device sensors
 
-### 💧 Lembretes de Hidratação
+### 💧 Hydration Reminders
 
-- Configuração de intervalos personalizados
-- Notificações suaves para lembrar de beber água
+- Customizable interval settings
+- Gentle notifications to remind you to drink water
 
-## Tecnologias Utilizadas
+## Technologies Used
 
-- **Flutter** (Framework multiplataforma)
-- **Firebase** (Backend e autenticação)
+- **Flutter** (Cross-platform framework)
+- **Firebase** (Backend and authentication)
 
-## Licença
+## License
 
-Este projeto está licenciado sob a licença MIT - veja o arquivo LICENSE para detalhes.
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-## Próximos Passos
+## Next Steps
 
-- Estatísticas semanais/mensais
-- Personalização de temas
+- Weekly/monthly statistics
+- Theme customization
