@@ -1,0 +1,14 @@
+{
+  "welcome": "Welcome to HidraFit",
+  "googleSignInError": "Failed to authenticate with Google",
+  "guestSignInError": "Failed to sign in as guest",
+  "continueWithGoogle": "Continue with Google",
+  "signInAsGuest": "Sign in as Guest",
+  "alreadyHaveAccount": "Already have an account? Sign in",
+  "dontHaveAccountSignUp": "Don't have an account? Sign up",
+  "appTitle": "HidraFit",
+  "chooseLanguage": "Choose Language",
+  "changeLanguage": "Change Language",
+  "portuguese": "Português (Brazil)",
+  "english": "English (USA)"
+}
