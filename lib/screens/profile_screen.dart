@@ -130,6 +130,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Widget _buildNeumorphicButton({
+    required String text,
+    required IconData icon,
+    required VoidCallback onPressed,
+  }) {
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        height: 50,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: Colors.grey[200],
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.white,
+              offset: Offset(-3, -3),
+              blurRadius: 6,
+              spreadRadius: 1,
+            ),
+            BoxShadow(
+              color: Colors.black12,
+              offset: Offset(1, 3),
+              blurRadius: 1,
+              spreadRadius: 1,
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: Colors.black45),
+            const SizedBox(width: 8),
+            Text(text, style: const TextStyle(fontSize: 18, color: Colors.black45)),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildProfilePhoto() {
     return Stack(
       alignment: Alignment.center,
@@ -217,15 +257,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              ElevatedButton.icon(
+              const SizedBox(height: 32),
+              _buildNeumorphicButton(
+                text: loc.saveButton,
+                icon: Icons.save,
                 onPressed: _saveProfile,
-                icon: const Icon(Icons.save),
-                label: Text(loc.saveButton),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  textStyle: const TextStyle(fontSize: 16),
-                ),
               ),
+
             ],
           ),
         ),

@@ -1,27 +1,28 @@
 import 'package:flutter/material.dart';
-//Provavelmente seria melhor refazer isso com um texto que mostra dinâmicamente o tempo desde o último copo d'água (futuramente quem sabe)
-// Função para exibir uma mensagem de toast (notificação temporária) na tela
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 void showToast(BuildContext context, String message) {
   ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text(message), duration: const Duration(seconds: 3)), // Mensagem e duração do toast
+    SnackBar(content: Text(message), duration: const Duration(seconds: 3)),
   );
 }
 
-// Função para mostrar um modal de hidratação
 void showHydrationModal(BuildContext context, Function() onConfirm) {
+  final loc = AppLocalizations.of(context)!;
+
   showDialog(
     context: context,
-    barrierDismissible: false, // Impede que o modal seja fechado ao tocar fora dele
+    barrierDismissible: false,
     builder: (_) => AlertDialog(
-      title: const Text("Hora de beber água!"), // Título do modal
-      content: const Text("Já bebeu água hoje? Hidratação é essencial. Lembre-se de beber água regularmente"), // Mensagem no modal
+      title: Text(loc.hydrationTitle),
+      content: Text(loc.hydrationMessage),
       actions: [
         TextButton(
           onPressed: () {
-            Navigator.of(context).pop(); // Fecha o modal
-            onConfirm(); // Chama a função de confirmação passada como argumento
+            Navigator.of(context).pop();
+            onConfirm();
           },
-          child: const Text("Bebi!"), // Texto do botão de confirmação
+          child: Text(loc.hydrationConfirmed),
         ),
       ],
     ),

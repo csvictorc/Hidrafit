@@ -44,5 +44,16 @@
   "invalidStepGoal": "Enter a valid goal in kilometers.",
   "invalidHydrationInterval": "Enter a valid hydration interval (minutes).",
   "profileSaved": "Profile saved successfully.",
-  "profileSaveError": "Error saving profile. Try again."
+  "profileSaveError": "Error saving profile. Try again.",
+  "hydrationTitle": "Time to drink water!",
+  "hydrationMessage": "Have you had water today? Hydration is essential. Remember to drink water regularly.",
+  "hydrationConfirmed": "Ok!",
+  "hydrationNotificationTitle": "Time to hydrate! 💧",
+  "hydrationNotificationBody": "Drink a glass of water now.",
+  "hydrationChannelName": "Hydration Reminders",
+  "hydrationChannelDescription": "Notifications to remind you to drink water",
+  "permissionNeeded": "Permission needed to track your activity.",
+  "requestPermission": "Request Permission",
+  "activityPermissionRequest": "Permission needed to track your activity",
+  "cupRegistered": "Water cup added!"
 }

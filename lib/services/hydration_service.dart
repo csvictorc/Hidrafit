@@ -24,61 +24,75 @@ class HydrationService {
   });
 
   Future<void> initialize() async {
-    tz_data.initializeTimeZones(); // Inicializo os fusos horários
+    tz_data.initializeTimeZones();
 
-    hydrationIntervalMinutes = prefs.getInt('hydration_interval') ?? 30; // Defino o intervalo de hidratação
+    // Carrega o intervalo de hidratação salvo ou usa o padrão (30 minutos)
+    hydrationIntervalMinutes = prefs.getInt('hydration_interval') ?? 30;
 
-    final lastDrinkStr = prefs.getString('last_drink_time');
-    lastDrinkTime = lastDrinkStr != null
-        ? DateTime.tryParse(lastDrinkStr)
-        : DateTime.now(); // Recupero o último horário de bebida ou uso agora
+    // Carrega o último horário de bebida usando millisecondsSinceEpoch
+    final lastDrinkMillis = prefs.getInt('last_drink_millis');
+    lastDrinkTime = lastDrinkMillis != null
+        ? DateTime.fromMillisecondsSinceEpoch(lastDrinkMillis)
+        : DateTime.now();
 
-    if (lastDrinkTime == null) {
-      lastDrinkTime = DateTime.now();
-      await prefs.setString('last_drink_time', lastDrinkTime!.toIso8601String()); // Salvo o horário atual
+    // Se não havia registro, salva o horário atual
+    if (lastDrinkMillis == null) {
+      await prefs.setInt(
+          'last_drink_millis', lastDrinkTime!.millisecondsSinceEpoch);
     }
 
-    _startTimer(); // Começo o timer para lembrar de beber água
-    _scheduleNextReminder(); // Agendo o próximo lembrete
+    _startTimer();
+    _scheduleNextReminder();
   }
 
   void _startTimer() {
-    _hydrationTimer?.cancel(); // Cancelo qualquer timer anterior
+    _hydrationTimer?.cancel();
     _hydrationTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (timeUntilNextGlass() <= Duration.zero) {
-        _hydrationTimer?.cancel(); // Cancelo o timer se o tempo até o próximo copo for zero
-        onReminder?.call(); // Chamo a função de lembrete
-        showWaterReminderNotification(); // Mostro a notificação para beber água
+        _hydrationTimer?.cancel();
+        onReminder?.call();
+        showWaterReminderNotification();
       }
     });
   }
 
   Duration timeUntilNextGlass() {
-    final nextDrinkTime = lastDrinkTime!.add(Duration(minutes: hydrationIntervalMinutes)); // Calculo o próximo horário de bebida
-    return nextDrinkTime.difference(DateTime.now()); // Retorno a diferença de tempo
+    if (lastDrinkTime == null) return Duration.zero;
+
+    final nextDrinkTime = lastDrinkTime!.add(Duration(minutes: hydrationIntervalMinutes));
+    final timeLeft = nextDrinkTime.difference(DateTime.now());
+
+    // Corrigido: Garante que o tempo nunca exceda o intervalo total
+    return timeLeft > Duration(minutes: hydrationIntervalMinutes)
+        ? Duration(minutes: hydrationIntervalMinutes)
+        : timeLeft.isNegative
+        ? Duration.zero
+        : timeLeft;
   }
 
   String formatDuration(Duration duration) {
     final minutes = duration.inMinutes;
     final seconds = duration.inSeconds % 60;
-    return "$minutes min ${seconds.toString().padLeft(2, '0')}s"; // Formato a duração para exibir
+    return "$minutes min ${seconds.toString().padLeft(2, '0')}s";
   }
 
   Future<void> registerGlassOfWater() async {
-    lastDrinkTime = DateTime.now(); // Registro o horário atual
-    await prefs.setString('last_drink_time', lastDrinkTime!.toIso8601String()); // Atualizo o horário no armazenamento
+    lastDrinkTime = DateTime.now();
+    await prefs.setInt(
+        'last_drink_millis', lastDrinkTime!.millisecondsSinceEpoch);
 
-    _startTimer(); // Reinicio o timer
-    _scheduleNextReminder(); // Agendo o próximo lembrete
+    _startTimer();
+    _scheduleNextReminder();
 
-    onGlassRegistered?.call(); // Chamo a função de registro do copo
+    onGlassRegistered?.call();
   }
 
   Future<void> _scheduleNextReminder() async {
-    final hydrationEnabled = prefs.getBool('hydration_notifications_enabled') ?? true; // Verifico se as notificações estão habilitadas
-    if (!hydrationEnabled) return; // Se não estiver habilitado, não faço nada
+    final hydrationEnabled = prefs.getBool('hydration_notifications_enabled') ?? true;
+    if (!hydrationEnabled) return;
 
-    final scheduledTime = tz.TZDateTime.now(tz.local).add(Duration(minutes: hydrationIntervalMinutes)); // Agendo o horário da próxima notificação
+    final scheduledTime = tz.TZDateTime.now(tz.local).add(
+        Duration(minutes: hydrationIntervalMinutes));
 
     await notificationsPlugin.zonedSchedule(
       0,
@@ -101,8 +115,8 @@ class HydrationService {
   }
 
   Future<void> showWaterReminderNotification() async {
-    final hydrationEnabled = prefs.getBool('hydration_notifications_enabled') ?? true; // Verifico novamente se as notificações estão habilitadas
-    if (!hydrationEnabled) return; // Se não estiver habilitado, não mostro a notificação
+    final hydrationEnabled = prefs.getBool('hydration_notifications_enabled') ?? true;
+    if (!hydrationEnabled) return;
 
     const androidDetails = AndroidNotificationDetails(
       'hydration_channel',
@@ -116,16 +130,16 @@ class HydrationService {
     await notificationsPlugin.show(
       0,
       'Hora de se hidratar! 💧',
-      'Beba um copo de água agora mesmo.', // Mensagem da notificação
+      'Beba um copo de água agora mesmo.',
       const NotificationDetails(android: androidDetails),
     );
   }
 
   Future<void> cancelHydrationNotifications() async {
-    await notificationsPlugin.cancel(0); // Cancelo a notificação com ID 0
+    await notificationsPlugin.cancel(0);
   }
 
   void dispose() {
-    _hydrationTimer?.cancel(); // Cancelo o timer ao descartar o serviço
+    _hydrationTimer?.cancel();
   }
 }

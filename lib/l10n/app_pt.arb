@@ -44,5 +44,16 @@
   "invalidStepGoal": "Digite uma meta válida em quilômetros.",
   "invalidHydrationInterval": "Digite um intervalo válido para hidratação (minutos).",
   "profileSaved": "Perfil salvo com sucesso.",
-  "profileSaveError": "Erro ao salvar perfil. Tente novamente."
+  "profileSaveError": "Erro ao salvar perfil. Tente novamente.",
+  "hydrationTitle": "Hora de beber água!",
+  "hydrationMessage": "Já bebeu água hoje? Hidratação é essencial. Lembre-se de beber água regularmente.",
+  "hydrationConfirmed": "Bebi!",
+  "hydrationNotificationTitle": "Hora de se hidratar! 💧",
+  "hydrationNotificationBody": "Beba um copo de água agora mesmo.",
+  "hydrationChannelName": "Lembretes de Hidratação",
+  "hydrationChannelDescription": "Notificações para lembrar de beber água",
+  "permissionNeeded": "Permissão necessária para rastrear sua atividade.",
+  "requestPermission": "Solicitar Permissão",
+  "activityPermissionRequest": "Permissão necessária para rastrear sua atividade.",
+  "cupRegistered": "Copinho registrado"
 }
