@@ -50,7 +50,7 @@ class _MainNavBarState extends State<MainNavBar>
           gapLocation: GapLocation.center,
           notchSmoothness: NotchSmoothness.defaultEdge,
           backgroundColor: Colors.grey[100],
-          activeColor: Colors.lightBlueAccent,
+          activeColor: const Color(0xFF69B5F1),
           inactiveColor: Colors.grey[400],
           onTap: (index) {
             widget.onTap(index == 0 ? 1 : 2);
@@ -70,7 +70,7 @@ class _MainNavBarState extends State<MainNavBar>
                 ),
                 child: Ink(
                   decoration: BoxDecoration(
-                    color: Colors.lightBlueAccent,
+                    color: const Color(0xFF69B5F1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Padding(

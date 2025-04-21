@@ -25,11 +25,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String _cachedPhotoUrl = '';
   bool _usingCachedData = false;
   bool _connectionChecked = false;
+  String _selectedLanguage = 'en'; // Idioma salvo nas SharedPreferences
 
   @override
   void initState() {
     super.initState();
+    _loadLanguage();
     _loadProfileData();
+  }
+
+  Future<void> _loadLanguage() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _selectedLanguage = prefs.getString('locale') ?? 'en'; // Carregar o idioma salvo
+    });
   }
 
   Future<void> _loadProfileData() async {
@@ -42,7 +51,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _hydrationInterval = _prefs.getInt('hydration_interval') ?? 30;
 
       _nameController.text = _cachedName;
-      _stepGoalController.text = (_stepGoalMeters / 1000).toStringAsFixed(1);
+      _stepGoalController.text = _getLocalizedStepGoalValue().toStringAsFixed(1);
       _hydrationIntervalController.text = _hydrationInterval.toString();
 
       setState(() {
@@ -59,6 +68,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
 
       await ProfileHelper.updateFirebaseProfileIfNeeded(
+        context: context,
         prefs: _prefs,
         onProfileUpdated: (name, photoUrl) {
           if (mounted) {
@@ -80,6 +90,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _connectionChecked = true;
       });
     }
+  }
+
+  double _getLocalizedStepGoalValue() {
+    // Use o idioma salvo no app para determinar se é métrico ou imperial
+    return _selectedLanguage == 'en' ? _stepGoalMeters / 1609.34 : _stepGoalMeters / 1000;
+  }
+
+  double _convertToMeters(double value) {
+    // Convertendo o valor para metros ou quilômetros dependendo do idioma
+    return _selectedLanguage == 'en' ? value * 1609.34 : value * 1000;
   }
 
   Future<void> _saveProfile() async {
@@ -104,8 +124,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     try {
+      // Converta o valor para metros antes de salvar
+      final stepGoalInMeters = _convertToMeters(parsedStepGoal);
+
       await _prefs.setString('name', newName);
-      await _prefs.setDouble('step_goal_m', parsedStepGoal * 1000);
+      await _prefs.setDouble('step_goal_m', stepGoalInMeters);
       await _prefs.setInt('hydration_interval', parsedHydrationInterval);
       await ProfileHelper.updateDisplayName(newName);
 
@@ -263,7 +286,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 icon: Icons.save,
                 onPressed: _saveProfile,
               ),
-
             ],
           ),
         ),

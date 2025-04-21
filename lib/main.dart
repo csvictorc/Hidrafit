@@ -61,26 +61,41 @@ class MyApp extends StatefulWidget {
   }
 }
 
-
-
 class _MyAppState extends State<MyApp> {
   Locale? _locale;
 
   @override
   void initState() {
     super.initState();
-    _loadSavedLocale();
+    _loadLocale();
   }
 
-  // Carregar o idioma salvo nas preferências
-  Future<void> _loadSavedLocale() async {
+  // Carregar o idioma baseado no idioma do sistema ou idioma salvo nas preferências
+  Future<void> _loadLocale() async {
     final prefs = await SharedPreferences.getInstance();
-    final langCode = prefs.getString('locale');
-    if (langCode != null) {
+    final savedLangCode = prefs.getString('locale');
+    if (savedLangCode != null) {
       setState(() {
-        _locale = Locale(langCode); // Atualiza o locale
+        _locale = Locale(savedLangCode);
       });
+    } else {
+      _setSystemLocale();
     }
+  }
+
+  // Definir o idioma baseado no sistema Android (pt-BR ou outro)
+  Future<void> _setSystemLocale() async {
+    final locale = WidgetsBinding.instance.window.locale;
+    String langCode = 'en'; // Padrão é inglês
+    if (locale.languageCode == 'pt' && locale.countryCode == 'BR') {
+      langCode = 'pt'; // Se for português do Brasil, define pt
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('locale', langCode); // Salva o idioma
+    setState(() {
+      _locale = Locale(langCode); // Atualiza o estado com o novo idioma
+    });
   }
 
   // Salvar o idioma selecionado nas preferências e atualizar o locale

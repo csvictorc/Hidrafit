@@ -351,23 +351,33 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildInfoCard(String title, String value) => Expanded(
     child: Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8), // Reduzi o padding horizontal
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.6),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
             title,
             style: const TextStyle(
-                color: Colors.black87, fontWeight: FontWeight.bold),
+              color: Colors.black87,
+              fontWeight: FontWeight.bold,
+              fontSize: 12, // Diminuí o tamanho da fonte do título
+            ),
             textAlign: TextAlign.center,
+            maxLines: 1, // Garante que o título fique em uma linha
+            overflow: TextOverflow.ellipsis, // Adiciona "..." se o texto for muito longo
           ),
-          const SizedBox(height: 11),
+          const SizedBox(height: 8), // Reduzi o espaçamento
           Text(
             value,
-            style: const TextStyle(color: Colors.black54),
+            style: const TextStyle(
+              color: Colors.black54,
+              fontSize: 18, // Aumentei o tamanho da fonte do valor
+              fontWeight: FontWeight.bold, // Deixei o valor em negrito
+            ),
             textAlign: TextAlign.center,
           ),
         ],

@@ -55,5 +55,14 @@
   "permissionNeeded": "Permissão necessária para rastrear sua atividade.",
   "requestPermission": "Solicitar Permissão",
   "activityPermissionRequest": "Permissão necessária para rastrear sua atividade.",
-  "cupRegistered": "Copinho registrado"
+  "cupRegistered": "Copinho registrado",
+  "confirmLogoutTitle": "Confirmar saída",
+  "confirmLogoutMessage": "Você tem certeza que deseja sair?",
+  "confirmDeleteTitle": "Excluir conta",
+  "confirmDeleteMessage": "Tem certeza que deseja excluir sua conta permanentemente?",
+  "cancel": "Cancelar",
+  "confirm": "Confirmar",
+  "errorDeletingAccount": "Erro ao excluir a conta.",
+  "reauthenticationRequired": "Reautenticação necessária para excluir a conta.",
+  "user": "Usuário"
 }

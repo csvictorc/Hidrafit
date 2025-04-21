@@ -1,8 +1,11 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class ProfileHelper {
   static Future<void> updateFirebaseProfileIfNeeded({
+    required BuildContext context,
     required SharedPreferences prefs,
     required Function(String name, String photoUrl) onProfileUpdated,
   }) async {
@@ -12,7 +15,8 @@ class ProfileHelper {
     final cachedName = prefs.getString('name') ?? '';
     final cachedPhotoUrl = prefs.getString('photo_url') ?? '';
 
-    final newName = user.displayName ?? 'Usuário';
+    final loc = AppLocalizations.of(context)!;
+    final newName = user.displayName ?? loc.user;
     final newPhotoUrl = user.photoURL ?? '';
 
     if (newName != cachedName || newPhotoUrl != cachedPhotoUrl) {

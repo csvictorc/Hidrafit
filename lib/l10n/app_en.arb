@@ -12,7 +12,7 @@
   "activityPermissionButton": "Allow activity recognition",
   "activityPermissionDenied": "Activity recognition permission denied.",
   "goalReachedTitle": "Congratulations! 🎉",
-  "goalReachedBody": "You reached your goal of {km} km today!",
+  "goalReachedBody": "You reached your goal of {km} today!",
   "welcome": "Welcome to HidraFit",
   "googleSignInError": "Failed to authenticate with Google",
   "guestSignInError": "Failed to sign in as guest",
@@ -37,7 +37,7 @@
   "errorOpeningLink": "Failed to open the link",
   "profileTitle": "Profile",
   "nameLabel": "Name",
-  "dailyGoalLabel": "Daily goal (km)",
+  "dailyGoalLabel": "Daily goal (mi)",
   "hydrationIntervalLabel": "Hydration interval (min)",
   "saveButton": "Save",
   "invalidName": "Enter a valid name.",
@@ -55,5 +55,14 @@
   "permissionNeeded": "Permission needed to track your activity.",
   "requestPermission": "Request Permission",
   "activityPermissionRequest": "Permission needed to track your activity",
-  "cupRegistered": "Water cup added!"
+  "cupRegistered": "Water cup added!",
+  "confirmLogoutTitle": "Confirm logout",
+  "confirmLogoutMessage": "Are you sure you want to log out?",
+  "confirmDeleteTitle": "Delete account",
+  "confirmDeleteMessage": "Are you sure you want to permanently delete your account?",
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "errorDeletingAccount": "Error deleting account",
+  "reauthenticationRequired": "Reauthentication required to delete account",
+  "user": "User"
 }

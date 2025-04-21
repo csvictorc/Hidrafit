@@ -69,7 +69,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
       }
     } catch (e) {
-      debugPrint('Erro ao sair: $e');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(AppLocalizations.of(context)!.errorLoggingOut)),
@@ -79,7 +78,74 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _deleteAccount(BuildContext context) async {
-    // ... implementação existente ...
+    try {
+      await FirebaseAuth.instance.currentUser?.delete();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+      if (context.mounted) {
+        Navigator.pushNamedAndRemoveUntil(context, '/login', (_) => false);
+      }
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'requires-recent-login') {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(AppLocalizations.of(context)!.reauthenticationRequired)),
+          );
+        }
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(AppLocalizations.of(context)!.errorDeletingAccount)),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _confirmLogout(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(AppLocalizations.of(context)!.confirmLogoutTitle),
+        content: Text(AppLocalizations.of(context)!.confirmLogoutMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(AppLocalizations.of(context)!.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(AppLocalizations.of(context)!.confirm),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      await _logout(context);
+    }
+  }
+
+  Future<void> _confirmDeleteAccount(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(AppLocalizations.of(context)!.confirmDeleteTitle),
+        content: Text(AppLocalizations.of(context)!.confirmDeleteMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(AppLocalizations.of(context)!.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(AppLocalizations.of(context)!.confirm),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      await _deleteAccount(context);
+    }
   }
 
   Future<void> _openGithubRepo() async {
@@ -205,13 +271,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _buildNeumorphicButton(
               text: AppLocalizations.of(context)!.logout,
               icon: Icons.logout,
-              onPressed: () => _logout(context),
+              onPressed: () => _confirmLogout(context),
             ),
             const SizedBox(height: 16),
             _buildNeumorphicButton(
               text: AppLocalizations.of(context)!.deleteAccount,
               icon: Icons.delete_forever,
-              onPressed: () => _deleteAccount(context),
+              onPressed: () => _confirmDeleteAccount(context),
             ),
           ],
         ),
