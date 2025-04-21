@@ -364,19 +364,19 @@ class _HomeScreenState extends State<HomeScreen> {
             style: const TextStyle(
               color: Colors.black87,
               fontWeight: FontWeight.bold,
-              fontSize: 12, // Diminuí o tamanho da fonte do título
+              fontSize: 12,
             ),
             textAlign: TextAlign.center,
-            maxLines: 1, // Garante que o título fique em uma linha
-            overflow: TextOverflow.ellipsis, // Adiciona "..." se o texto for muito longo
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 8), // Reduzi o espaçamento
+          const SizedBox(height: 8),
           Text(
             value,
             style: const TextStyle(
               color: Colors.black54,
-              fontSize: 18, // Aumentei o tamanho da fonte do valor
-              fontWeight: FontWeight.bold, // Deixei o valor em negrito
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
             ),
             textAlign: TextAlign.center,
           ),
