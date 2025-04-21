@@ -12,7 +12,8 @@ HidraFit is an app designed to help users maintain healthy habits through:
 <p align="center">
   <img src="screenshots/home.jpg" alt="Home Screen" width="300"/>
   <img src="screenshots/profile.jpg" alt="Profile Screen" width="300"/>
-  <img src="screenshots/config.jpg" alt="Settings Screen" width="300"/>
+  <img src="screenshots/settings.jpg" alt="Settings Screen" width="300"/>
+  <img src="screenshots/login.jpg" alt="Login Screen" width="300"/>
 </p>
 
 ## Main Features
